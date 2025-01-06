@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>세자리 덧셈 뺄셈 대소비교</title>
+    <style>
+        /* 스타일 정의 */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f8ff;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        #gameContainer {
+            display: none;
+        }
+        #energyBarContainer {
+            width: 80%;
+            background-color: #ddd;
+            margin: 20px auto;
+            height: 20px;
+            border-radius: 10px;
+        }
+        #energyBar {
+            width: 100%;
+            height: 100%;
+            background-color: #76c7c0;
+            border-radius: 10px;
+        }
+        #question {
+            font-size: 2em;
+            margin: 20px 0;
+        }
+        .option {
+            display: block;
+            width: 50%;
+            margin: 10px auto;
+            padding: 10px;
+            font-size: 1.5em;
+            background-color: #e7e7e7;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .option:hover {
+            background-color: #d7d7d7;
+        }
+        #score, #lives, #totalTime {
+            font-size: 1.2em;
+            margin: 10px;
+        }
+        #startScreen {
+            margin-top: 50px;
+        }
+        .difficultyBtn {
+            display: block;
+            width: 50%;
+            margin: 10px auto;
+            padding: 15px;
+            font-size: 1.5em;
+            background-color: #ffa500;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .difficultyBtn:hover {
+            background-color: #ff8c00;
+        }
+        #message {
+            font-size: 1.5em;
+            color: red;
+        }
+        /* 서버 응답 결과 표시 */
+        #response {
+            margin-top: 20px;
+            white-space: pre-wrap;
+            color: green;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 시작 화면 -->
+    <div id="startScreen">
+        <h1>세자리 덧셈 뺄셈 대소비교</h1>
+        <!-- 이름 입력 필드 추가 -->
+        <label for="playerName">이름을 입력하세요:</label><br/>
+        <input type="text" id="playerName" placeholder="이름"><br/><br/>
+
+        <p>난이도를 선택하세요:</p>
+        <button class="difficultyBtn" onclick="startGame('최상')">최상</button>
+        <button class="difficultyBtn" onclick="startGame('상')">상</button>
+        <button class="difficultyBtn" onclick="startGame('중')">중</button>
+        <button class="difficultyBtn" onclick="startGame('하')">하</button>
+    </div>
+
+    <!-- 게임 진행 화면 -->
+    <div id="gameContainer">
+        <div id="energyBarContainer">
+            <div id="energyBar"></div>
+        </div>
+        <div id="question"></div>
+        <div id="options">
+            <button class="option" onclick="checkAnswer(0)"></button>
+            <button class="option" onclick="checkAnswer(1)"></button>
+            <!-- 2지선다이므로 나머지 버튼은 숨깁니다. -->
+            <button class="option" style="display:none;" onclick="checkAnswer(2)"></button>
+            <button class="option" style="display:none;" onclick="checkAnswer(3)"></button>
+        </div>
+        <div id="score"></div>
+        <div id="lives"></div>
+        <div id="totalTime"></div>
+        <div id="message"></div>
+
+        <!-- 점수 전송 버튼 및 응답 표시 -->
+        <button style="margin-top:20px;" onclick="submitScore()">점수 전송</button>
+        <div id="response"></div>
+    </div>
+
+    <script>
+        // 문제 데이터
+        let problems = [
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["157+648", "920-114"],
+                answer: "920-114"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["235+674", "940-32"],
+                answer: "235+674"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["463+327", "850-59"],
+                answer: "850-59"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["586+218", "900-97"],
+                answer: "586+218"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["179+721", "950-49"],
+                answer: "950-49"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["369+528", "940-42"],
+                answer: "940-42"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["287+612", "950-52"],
+                answer: "287+612"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["418+481", "930-30"],
+                answer: "930-30"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["197+702", "880-21"],
+                answer: "197+702"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["324+575", "910-10"],
+                answer: "910-10"
+            },
+        ];
+
+        // 나머지 40문제를 추가로 push (총 50문제 예시)
+        problems.push(
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["645+254", "900-0"],
+                answer: "900-0"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["238+659", "930-32"],
+                answer: "930-32"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["157+648", "920-114"],
+                answer: "920-114"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["235+674", "940-32"],
+                answer: "235+674"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["463+327", "850-59"],
+                answer: "850-59"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["586+218", "900-97"],
+                answer: "586+218"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["179+721", "950-49"],
+                answer: "950-49"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["369+528", "940-42"],
+                answer: "940-42"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["287+612", "950-52"],
+                answer: "287+612"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["418+481", "930-30"],
+                answer: "930-30"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["197+702", "880-21"],
+                answer: "197+702"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["324+575", "910-10"],
+                answer: "910-10"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["645+254", "900-0"],
+                answer: "900-0"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["238+659", "930-32"],
+                answer: "930-32"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["553+346", "940-40"],
+                answer: "940-40"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["483+416", "890-10"],
+                answer: "483+416"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["327+572", "920-19"],
+                answer: "920-19"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["296+603", "880-19"],
+                answer: "296+603"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["178+721", "870-30"],
+                answer: "178+721"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["419+580", "950-50"],
+                answer: "419+580"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["258+741", "980-20"],
+                answer: "258+741"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["387+612", "1000-0"],
+                answer: "1000-0"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["178+821", "900-0"],
+                answer: "178+821"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["496+503", "980-19"],
+                answer: "496+503"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["387+612", "990-9"],
+                answer: "387+612"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["579+420", "1000-0"],
+                answer: "1000-0"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["149+850", "970-30"],
+                answer: "149+850"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["268+731", "920-21"],
+                answer: "268+731"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["327+672", "960-10"],
+                answer: "327+672"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["446+553", "940-40"],
+                answer: "446+553"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["396+603", "970-20"],
+                answer: "396+603"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["275+724", "950-49"],
+                answer: "275+724"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["124+875", "990-9"],
+                answer: "124+875"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["235+764", "980-81"],
+                answer: "235+764"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["358+641", "970-10"],
+                answer: "358+641"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["487+512", "950-20"],
+                answer: "487+512"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["279+720", "940-40"],
+                answer: "279+720"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["196+803", "920-20"],
+                answer: "196+803"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["385+614", "980-10"],
+                answer: "385+614"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["298+701", "950-50"],
+                answer: "298+701"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["417+582", "1000-0"],
+                answer: "1000-0"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["296+703", "940-10"],
+                answer: "296+703"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["365+634", "970-20"],
+                answer: "365+634"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["187+812", "920-10"],
+                answer: "187+812"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["269+730", "930-10"],
+                answer: "269+730"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["348+651", "940-25"],
+                answer: "348+651"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["457+542", "980-30"],
+                answer: "457+542"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["176+823", "900-15"],
+                answer: "176+823"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["285+714", "950-40"],
+                answer: "285+714"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["394+605", "930-25"],
+                answer: "394+605"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["513+486", "950-35"],
+                answer: "513+486"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["622+377", "970-40"],
+                answer: "622+377"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["731+268", "990-50"],
+                answer: "731+268"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["849+150", "920-10"],
+                answer: "849+150"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["958+41", "900-5"],
+                answer: "958+41"
+            },
+            {
+                question: "더 큰 수를 고르시오.",
+                options: ["958+41", "900-5"],
+                answer: "958+41"
+            }
+        );
+
+        let currentProblemIndex = 0;
+        let score = 0;
+        let lives = 3;
+        let timeLimit;        // 난이도별 제한시간
+        let timeRemaining;
+        let timer;
+        let totalTime = 0;    // 전체 게임 시간
+        let difficulty;
+        let pointsPerQuestion;
+        let timeDecreaseRate; // 문제를 맞출 때마다 제한시간이 줄어드는 정도
+
+        // 문제 배열 셔플 함수
+        function shuffle(array) {
+            array.sort(() => Math.random() - 0.5);
+        }
+
+        // 게임 시작
+        function startGame(selectedDifficulty) {
+            difficulty = selectedDifficulty;
+            // 이름이 비어 있으면 경고 후 중단
+            const playerNameInput = document.getElementById('playerName');
+            if (!playerNameInput.value.trim()) {
+                alert("이름을 입력하세요.");
+                return;
+            }
+
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameContainer').style.display = 'block';
+
+            shuffle(problems); // 문제를 섞습니다.
+
+            // 난이도별 설정
+            switch (difficulty) {
+                case '최상':
+                    timeLimit = 20;
+                    pointsPerQuestion = 20;
+                    break;
+                case '상':
+                    timeLimit = 30;
+                    pointsPerQuestion = 15;
+                    break;
+                case '중':
+                    timeLimit = 40;
+                    pointsPerQuestion = 13;
+                    break;
+                case '하':
+                    timeLimit = null; // 시간제한 없음
+                    pointsPerQuestion = 10;
+                    break;
+            }
+
+            timeDecreaseRate = (difficulty === '하') ? 0 : 0.01;
+            
+            showNextProblem();
+            updateStats();
+            if (timeLimit) {
+                startTimer();
+            }
+            totalTimeCounter();
+        }
+
+        // 다음 문제 출력
+        function showNextProblem() {
+            if (currentProblemIndex >= problems.length) {
+                // 문제를 모두 사용했으므로 배열을 다시 섞고 첫 문제부터
+                currentProblemIndex = 0;
+                shuffle(problems);
+            }
+            let problem = problems[currentProblemIndex];
+            document.getElementById('question').innerText = problem.question;
+            
+            // 선택지 배치(2지선다)
+            let optionButtons = document.getElementsByClassName('option');
+            optionButtons[0].style.display = 'block';
+            optionButtons[1].style.display = 'block';
+            optionButtons[0].innerText = problem.options[0];
+            optionButtons[0].value = problem.options[0];
+            optionButtons[1].innerText = problem.options[1];
+            optionButtons[1].value = problem.options[1];
+            // 나머지 버튼은 숨김
+            optionButtons[2].style.display = 'none';
+            optionButtons[3].style.display = 'none';
+
+            // 에너지바 초기화
+            resetEnergyBar();
+        }
+
+        // 정답 확인
+        function checkAnswer(selectedOptionIndex) {
+            let selectedAnswer = document.getElementsByClassName('option')[selectedOptionIndex].value;
+            let correctAnswer = problems[currentProblemIndex].answer;
+            // 실제 계산 값 비교
+            let selectedResult = eval(selectedAnswer);
+            let correctResult = eval(correctAnswer);
+
+            if (selectedResult === correctResult) {
+                score += pointsPerQuestion;
+                document.getElementById('message').innerText = "정답입니다!";
+            } else {
+                lives--;
+                document.getElementById('message').innerText =
+                    "틀렸습니다! 정답은 " + correctAnswer + " = " + correctResult + " 입니다.";
+                if (lives <= 0) {
+                    gameOver();
+                    return;
+                }
+            }
+            currentProblemIndex++;
+            updateStats();
+
+            if (timeLimit) {
+                clearInterval(timer);
+                // 문제 맞출 때마다 제한시간 축소
+                timeLimit = timeLimit * (1 - timeDecreaseRate);
+                startTimer();
+            }
+            showNextProblem();
+        }
+
+        // 점수, 남은 기회 표시
+        function updateStats() {
+            document.getElementById('score').innerText = "점수: " + score;
+            document.getElementById('lives').innerText = "남은 기회: " + lives;
+        }
+
+        // 에너지바 초기화
+        function resetEnergyBar() {
+            if (timeLimit) {
+                document.getElementById('energyBar').style.width = '100%';
+            }
+        }
+
+        // 타이머 시작
+        function startTimer() {
+            timeRemaining = timeLimit;
+            timer = setInterval(() => {
+                timeRemaining -= 0.1;
+                let energyBarWidth = (timeRemaining / timeLimit) * 100;
+                document.getElementById('energyBar').style.width = energyBarWidth + '%';
+
+                if (timeRemaining <= 0) {
+                    clearInterval(timer);
+                    lives--;
+                    document.getElementById('message').innerText = "시간 초과! 기회 1 감소.";
+                    if (lives <= 0) {
+                        gameOver();
+                        return;
+                    }
+                    currentProblemIndex++;
+                    updateStats();
+                    timeLimit = timeLimit * (1 - timeDecreaseRate);
+                    startTimer();
+                    showNextProblem();
+                }
+            }, 100);
+        }
+
+        // 전체 게임 시간 카운트
+        function totalTimeCounter() {
+            setInterval(() => {
+                totalTime += 1;
+                let minutes = Math.floor(totalTime / 60);
+                let seconds = totalTime % 60;
+                document.getElementById('totalTime').innerText =
+                    "전체 게임 시간: " + minutes + "분 " + seconds + "초";
+            }, 1000);
+        }
+
+        // 게임 종료
+        function gameOver() {
+            clearInterval(timer);
+            alert("게임 종료! 총 점수: " + score);
+            location.reload();
+        }
+
+        // 점수 전송 함수
+        function saveData(game, name, score, elapsedTime) {
+            const FUNCTION_URL = "https://us-central1-record-f420d.cloudfunctions.net/report";
+
+            const requestData = {
+                game,
+                name,
+                score: parseInt(score, 10),
+                elapsedTime: parseInt(elapsedTime, 10)
+            };
+
+            // 서버로 데이터 전송
+            try {
+                // fetch는 Promise를 반환하므로 then을 사용하거나 await를 사용해야 합니다.
+                fetch(FUNCTION_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                })
+                .then(response => response.json()
+                    .then(responseData => {
+                        if (response.ok) {
+                            document.getElementById('response').innerText =
+                                "성공: " + JSON.stringify(responseData, null, 2);
+                        } else {
+                            document.getElementById('response').innerText =
+                                "오류: " + JSON.stringify(responseData, null, 2);
+                        }
+                    })
+                )
+                .catch(error => {
+                    console.error('요청 실패:', error);
+                    document.getElementById('response').innerText =
+                        "네트워크 오류: " + error.message;
+                });
+            } catch (error) {
+                console.error('요청 실패:', error);
+                document.getElementById('response').innerText =
+                    "네트워크 오류: " + error.message;
+            }
+        }
+
+        // "점수 전송" 버튼 클릭 시 호출
+        function submitScore() {
+            const playerName = document.getElementById('playerName').value;
+            // 실제 게임 이름, 점수, 걸린 시간을 전달
+            saveData("세자리 덧셈 뺄셈 대소비교", playerName, score, totalTime);
+        }
+    </script>
+</body>
+</html>
